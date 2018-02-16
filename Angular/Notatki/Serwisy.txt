@@ -1,0 +1,23 @@
+Services
+ 
+Aby stworzyć serwis wystarczy stworzyć plik nazwa.service.ts i eksportować taką klasę. Nie potrzebne są żadne dekoratory. Aby użyć serwis w innej klasie można po prostu zaimportować, stworzyć instancję serwisu i korzystać z metod zawartych w klasie. Przykład:
+	>>	import { SomeService } from '../some.service';
+		const service = new SomeService();
+		service.smth();
+Nie jest jednak zalecane takie tworzenie serwisów. Należy wykorzystać wstrzykiwanie przez konstruktor. Nie potrzebne są żadne zmiany w samym serwisie, a w klasie, gdzie chcemy zainicjalizować serwis. W takim przypadku należy tak samo zaimportować, następnie w argumencie dekoratora @Component dodać dla klucza provides listę zawierającą klase zaimportowanego serwisu, a następnie w konstruktorze dodać w argumencie pole typu serwisu. Taka konstrukcja automatycznie wstrzyknie do pola nową instancję serwisu. Przykład:
+	>>	import { SomeService } from '../some.service';
+		@Component({...,providers: [SomeService]})
+		constructor(private someService : SomeService) {}
+		someService.smth();
+
+Jeśli wstrzykniemy serwis do komponentu (lub do modułu) (poprzez providers) to jest on automatycznie rozpropagowany na wszystkie dzieci i ich dzieci. Wszystkie te komponenty mają wtedy tą samą instancję serwisu, jednak trzeba pamiętać aby u dziecka, w którym chcemy wykorzystać serwis musimy mieć go dalej w konstruktorze Jeśli w którymś dziecku ten sam serwis jest inicjalizowany drugi raz to przesłono on wyższy serwis u siebie i u swoich potomków.                   
+
+Jeśli chcemy do serwisu dodać inny serwis należy odekorować go @Injectable. Wtedy jeśli serwis, który chcemy wstrzyknąć do tego serwisu jest wymieniony jako provider na wyższym poziomie (w AppModule) będzie on możliwy do wstrzyknięcia w konstruktorze tak samo jak w przypadku komponentów.
+
+Jeśli chcemy usprawnić komunikację między komponentami można to zrobić używając serwisu, który posiadają oba komponenty. W serwisie należy stworzyć EventEmitter, w jednym komponencie użyć go i wywołać emit, a w drugim komponencie zasubskrybować ten EventEmitter w konstruktorze. Przykład
+	>>	service:
+			emitter: EventEmmiter<string>();
+		komponent1:
+			this.service.emmiter.emit('smth');
+		komponent2:
+			constructor(private service: SomeService){service.emitter.subscribe((smth: string) => alert(smth);)}

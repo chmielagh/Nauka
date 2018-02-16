@@ -1,0 +1,68 @@
+Routing
+
+Routing pomaga, aby sterować widokiem strony za pomocą zmiany URL. Mimo zmiany urla mamy tak na prawdę tą samą stronę (SPA), której tylko elementy mogą ulegać zmianie/być zamieniane.
+
+Aby zainicjalizować routing na danym module należy w pliku app.module.ts dodać stałą globalną appRoutes(nazwa dowolna) typu Route i przypisąć do niej tablice obiektów {path: 'string', component: SomeComponent}. W dekoratorze NgModule do importów dodać RouteModule z wywołaną funkcją forRoot, a w argumencie dodać otworzoną przed chwilą stałą appRoutes. Następnie aby użyć routingu w kodzie należy w pliku htrml, tak gdzie chcemy go użyć, dodać dyrektywę router-outlet (dyrektywa może mieć też selektor <>, w tym przypadku taki ma), w tym miejscu widok będzie zależny od urla. Przykład
+	>>	app.module
+			const appRoutes: Route = [{path:'', component:HomeComponent}, {path:'some', component: SomeComponent}]
+			@NgModule({
+			...
+			imports:[...,RouteModule.forRoot(appRoutes)]})
+		app.component.html
+			<div class='col-xs-10'><router-outlet></router-outlet></div>
+			
+Aby w kodzie podpiąć link, aby po naciśnięciu poprawnie routował należy w przykładownym znaczniku <a> nie używać atrybuty href, ponieważ będzie to skutkowało przeładowaniem strony, ale użyc attribute dyrektywy routerLink, który przyjmuje stringa będącego 'pathem' w naszym modelu routowania. Należy pamiętać, że jeżeli będąc na jakimś urlu użyjemy w komponencie zagnieżdżonym ponownie routerLinka bez slasha na początku to aplikacja odczyta to jako próba przeniesienia na /some/some, dlatego należy pamiętać o slashu. Możliwe jest też użycie przejścia do poziomu wyżej (../some) kiedy tworzymy ścieżkę względną. Przykład
+	>>	app.component.html
+			<a routerLink="/">Home</a>
+			<a routerLink="/users">Users</a>
+		
+Możemy też użyć dyrektywy atrybutu routerLinkActive, która doda nam do elementu podaną przez nas klasę w momencie, kiedy aktualny url będzie zawierał path, który jest skonfigurowany w danym elemencie. Domyślnie dyrektywa sprawdza zawieranie się linku, więc jak mamy route '/' to będzie ona zawsze prawdziwa, przez co zawsze podana klasa będzie dodawana do elementu. Aby sprawić, by sprawdzana była równość zamiast zawierania należy użyć dyrektywy routerLinkActiveOptions, która przyjmuje obiekt (dlatego używając jej piszemy ją w nawiasach kwadratowych) opcji, a w niej jest pole boolean exact, które należy ustawić na true. Przykład
+	>>	app.component.html
+			<div routerLinkActive="active" [routerLinkActiveOptions]="{exactL true}"><a routerLink="/">Home</a></div>
+			<div routerLinkActive="active"><a routerLink="/users">Users</a></div>
+		
+Jeśli nie chcemy aby użycie linka nas ograniczało możemy użyć routera programistycznie. Aby to zrobić wystarczy stworzyć handler jakiegoś eventu w pliku html, który wywołą naszą metodę w ts. Aby mieć dostęp do routowania w ts należy w konstruktorze przyjąć argument typu Router. Taki obiekt ma funkcję navigate, która przyjmuje tablice stringów, które będą kolejno umieszczone w docelowym urlu. Aby zdarzenie przeniosło nas do danej strony wystarczy umieścić ją w tablicy. Przykład
+	>> 	app.component.html
+			<button (click)="onReturnHome()">Return Home</button>
+		app.component.ts
+			construktor(private router: Router){}
+			onReturnHome(){this.router.navigate(['/'])}
+			
+metoda navigate w przeciwieństwie do użycia routingu w htmlu domyślnie nie tworzy ścieżki względnej, ale bezwzględna, ponieważ nie ma ona informacji o aktualnej ścieżce. Można to zmienić dodając do metody drugi argument, który jest obiektem NavigationExtras, mający między innymi pole relativeTo, który określa w stosunku do czego metoda ma tworzyć względą ścieżkę. Aby mieć informację o aktualnej ścieżcę można wstrzyknąć przez konstruktor obiekt ActivatedRoute, który można przekazać do pola relativeTo. Przykład:
+	>>	app.component.ts
+			construktor(private router: Router, private route: ActivatedRoute){}
+			onRouting(){this.router.navigate(['some'], {relativeTo: route})};
+			
+Aby móc paramentryzować url należy do ścieżki w app.module użyć w segmencie prefix ':'. Będzie to oznaczało, że w danym segmencie aplikacja przyjmie argument i będzie on możliwy do odczytania w kodzie. Aby odczytać go, należy tak jak wcześniej wskrzyknąć obiekt ActivatedRoute, posiada on pole snapshot, który robi migawkę aktualnej ścieżki w danej chwili. W snapshocie dostajemy pole params, czyli mape, gdzie kluczem jest nazwa parametru użytego w ścieżce, a wartością segment aktualnego urlu odpowiadający parametrowi. 
+	>>	app.module.ts
+			const routes: Route[] = [{path:'/users/:id/:name}]
+		user.component.ts
+			user: {id: string, name: string};
+			constructor(private route: ActivatedRoute){}
+			ngOnInit(){this.user={id: this.route.snapshot.params['id'], name: this.route.snapshot.params['name']}}
+		user.component.html
+			<p>User Id: {{user.id}}</p>
+			<p>User name: {{user.name}}</p>
+			
+Należy pamiętać, że przy takim podejściu snapshot tworzony jest przy inicjalizacji komponentu, dlatego jeśli mając zainicjalizowany komponent będziemy chcieli z wewnątrz zmienić dane przez zmiane urla to dane pozostaną niezmienione. Aby dane się aktualizowały można subskrybować eventu zmiany parametrow. Przykład (nadpisanie powyższego)
+	>>	user.component.ts
+			ngOnInit(){
+			this.user={id: this.route.snapshot.params['id'], name: this.route.snapshot.params['name']}
+			this.route.params.subscribe((params)=>{this.user.id = params['id'];this.user.name = params['name'];})
+			}
+			
+Żeby odsubskrybować jakiś event (nie jest to wymagane w powyższych przypadkach) należy przypisać subskrypcję do pola w klasie, następnie w ngOnDestroy wywołać na niej unsubscribe()
+
+Oprócz segmentów w urlu moga pojawić się też parametry zawołania (po znaku ?) oraz fragment (po #). Aby w htmlu przejść pod url z parametrami oraz fragmentem należy użyć obok dyrektywy routerLink właściwości queryParams oraz fragment
+	>>	servers.component.html
+			<a [routerLink]="['servers',1]" [queryParams]="{allowEdit:True}" fragment="loading">Load</a>
+			
+Aby zrobić to programistycznie należy tak jak wcześniej użyć metory navigate clasy Router i w NavigationExtras użyć pól queryParams (obiekty przyjmujący KV) oraz fragment (string)
+	>>	servers.component.ts
+		onLoadServer(id: number){this.router.navigate(['servers',id], {queryParams:{allowEdit:true}, fragment:'loading'})}
+		
+Aby uzystać queryParams ofraz fragment wewnątrz kodu robimy to tak samo jak z route, te pola również można subskrybować.
+
+Jeśli bierzemy jakąś wartość z paramsów musimy pamiętać, że zawsze zwracany jest string. Aby Przekształcić go do integera wystarczy przed nim umieścić plusa (+someString)
+
+DOPISAC CHILD ROUTES
