@@ -65,4 +65,42 @@ Aby uzystać queryParams ofraz fragment wewnątrz kodu robimy to tak samo jak z 
 
 Jeśli bierzemy jakąś wartość z paramsów musimy pamiętać, że zawsze zwracany jest string. Aby Przekształcić go do integera wystarczy przed nim umieścić plusa (+someString)
 
-DOPISAC CHILD ROUTES
+Można też robić drzewo routowania, a dokładniej dodać dzieci do danej ścieżki routowania. Dla każdego routa, który ma dzieci musimy w templacie dodać handler do routerowania, w tym miejscu będą renderowane dzieci, które zdefiniujemy dla tego routa. Aby to zrobić, w miejscu gdzie definiowaliśmy routy (appModule) w liście obiektów route dodajemy do obiektu, który ma być parentem pole children, które będzie obiektem tego samego typu. W komponencie, który jest przypisany do takiego routa należy dodać handler (<router-outlet>). Ścieżka dla dzieci powinna być relatywna do ścieżki parenta. W ten sposób przy routowaniu nie będzie się przełądywała cała strona, a tylko element, gdzie umieściliśmy nasz handler. Przykład:
+	>>	app.module.ts
+			const appRouter: Route[] = [{ path:'servers', component: ServersComponent, children: [{path:':id', component: ServerComponent}, {path:':id/edit', component: ServerEditComponent}]
+		servers.component.html
+			<p>Serwery</p><br><router-outlet></router-outlet>
+			
+Domyślnie przy przekierowaniu metodą navigate nasze dodatkowe parametry typu queryParams i fragment zostaną usunięte. Aby tego uniknąć należy użyć propertiesa QueryParamsHandling w opcjach metody navigate. Pole przyjmuje stringa, jeśli chcemy połączyć stare parametry z nowymi użyjemy stringa 'merge', nastomiast jeśli stare mają nadpisać nowe użyjemy 'preserve'. Przykład
+	>>	some.component.ts
+			constructor(private router: Router, private route:ActivatedRoute){}
+			onRedirect(){this.router.navigate(['somewhereElse'], {relativeTo: this.route, queryParamsHandlig:'merge'})}
+			
+Aby zadbać o przypadki, kiedy url jest niepoprawny powinniśmy stworzyć stronę komunikującą, że dana strona nie została znaleziona. W tym przypadku należy przygotować komponent, który będzie docelowym  wprzypadku kiedy url będzie niepoprawny, przykładowo PageNotFoundComponent. W definicji Routes dodajemy ścieżkę, który będzie odpowiadał temu komponentowi. Póki co do tej strony prowadzi tylko bezpośrednio wpisany url. Aby przekierować wszystkie uerle niepasujące do definicji routes należy jako ostatni obiekt w tabeli (ponieważ tabela parsowana jest pokolei) i jako path dać '**' (dopasuj wszystkie wzorce) a w polu redirectTo wpisac ścieżkę, która prowadzi do naszego NotFound. Pomijamy pole component. Przykład:
+	>>	not-found.component.html
+			<h4>Page not found</h4>
+		app.module.ts
+			const appRoutes: Route[] = [{path:'not-found', component: NotFoundComponent}, {path:'**', redirectTo:'not-found'}]
+			
+Dobrą praktyką jest wydzielenie definicji routowania do osobnego pliku - modułu. Aby to uczynić najlepiej zrobić plik odpowiadający naszemu modułowi z suffixem Routing, tak na przykład dla app.module.ts powstanie app-routing.module.ts. W tym module należy umieścić definicje routowań i następnie exportować nie ten moduł, ale moduł RouterModule. Przykład:
+	>>	app-routing.module.ts
+			const appRouters:Routes = [...]
+			@NgModule({imports:[RouterModule.forRoot(appRoutes)],export:RouterModule})
+		app.module.ts
+			@NgModule({import: AppRouterModule})
+			
+Do sterowania, czy dany użytkownik powinien mieć dostęp do danej strony (danego patha) możemy użyć Guarda. Jest to 'strażnik', który będzie decydował czy użytkownik w danym kontekście może wejść na stronę. Aby użyć tej funkcjonalności, w definicji routingu, należy dla ścieżki, którą chcemy chronić, użyć pola canActivate i w wartości w liście dodać naszą implementacje interfejsu CanActivate. W naszej implementacji musimy zaimplementować metodę canActivate, która będzie decydowała, czy użytkownik może wejść - w takim przypadku musi zwrócić true. metoda przyjmuje w argumentach ActivatedRouteSnapshot oraz RouterStateSnapshot, a może zwrócić Observable<boolean>, Promise<boolean> lub po prostu boolean. Jeśli chcemy zamiast zwracać false przekierować użytkonika gdzieś indziej również możemy to zrobić. Przykład
+	>>	app-routing.module.ts
+			const appRoutes:Routes = [{path:'services', canActivate:[MyAuthGuard], component: ServicesComponent}]
+		auth.service.ts
+			export class AuthService{
+				logged: boolean = false;
+				login(){this.logged = true}
+				logout(){this.logged = false}
+				isAuthenticated():Promise<boolean> {return new Promise(resolve,reject) => resolve(this.logged)}
+		my-auth-guard.service.ts	
+			@Injectable export class MyAuthGuard implements CanActivate {
+				constructor(private router: Router, private authService: AuthService){}
+				canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+					return this.authService.isAuthenticated().then((isAuth:boolean)=>{if(isAuth) return true; this.router.navigate(['/'])})
+				}
