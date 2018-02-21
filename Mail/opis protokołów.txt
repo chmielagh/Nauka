@@ -1,0 +1,46 @@
+e-Mail
+
+Protokoły:
+
+POP 3 - Post Office Protocol 3
+	port 
+		110 nieszyfrowany
+		995 szyfrowany
+	
+	
+Protokół obsługi poczty elektronicznej opisujący sposób wymiany informacji między klientem a serwerem. Wiadomości pozostają na serwerze do momentu pobrania ich przez klienta. Domyślnie po pobraniu wiadomości są usuwane z serwera, ale można temu zapobiec. Taka komukacja sprzyja sytuacją, kiedy nie chcemy utrzymywać ciągle połączenia z siecia, tylko pobrać wiadomości i móc przeglądać je lokalnie.
+
+Przed jakąkolwiek akcją ze strony klienta serwer rozpoczyna w trybie POP3 i nasłuchuje na porcie 110 protokołu TCP. Gdy przychodzi prośba o nawiązanie połączenia od klienta serwer odsyła greeting i przechodzi w faze autoryzacji. Następnym krokiem jest przesłanie przez klienta danych autoryzujących. Serwer po akceptacji danych przechodzi w tryb transacji i oczekuje na kolejne komendy przesyłane przez klienta, aż do komendy QUIT, po której serwer aktualizuje zasoby zajęte przez klienta i rozłącza sesje. Istnieje też możliwość ustawienia timera, który będzie timeoutował połączenie po zadanym czasie.
+
+Komendy w POP3 składają się ze słowa kluczowego, po którym następują argumenty, wszystko oddzielone spacjami. Odpowiedź w POP3 to wskaźnik statusu ("+OK" lub "-ERROR") oraz dodatkowe informacji.
+
+Stany:
+1. autoryzacji
+	sesja przechodzi w ten stan wtedy, gdy serwer wyśle greeting
+2. transakcji
+	po udanej autoryzacji serwer oczekuje na polecenia, które składają się z pojedynczych linii, gdzie pierwsze słowo to komenda, a następnie argumenty. Po kazdym poleceniu serwer zwraca odpowiedź
+3. aktualizacji
+	po komendzie QUIT następuje zerwanie sesji i serwer dokonuje aktualizacji, tj zwalnia zasoby i zamyka skrzynkę. Jeśli komenda QUIT nastąpi w stanie autoryzacji to serwer omija stan aktualizacji. W tej fazie usuwane są również wiadomości oznaczone do usunięcia.
+	
+Połączenie:
+Połączyć do portu nieszyfrowanego można telnetem, natomiast na przykład gmail ma zablokowaną komunikację nieszyfrowaną
+ > telnet pop.gmail.com 110
+Aby połączyć się do portu z szyfrowaną komunikacją należy użyć openssla
+ > openssl s_client -connect pop.gmail.com:995 -quiet
+ 
+Komendy:
+USER _user		- Pierwsza po nawiązaniu połączenia komenda, podajemy nazwę skrzynki
+PASS _password	- Po wysłaniu komendy USER serwer prosi o hasło do podanej skrzynki
+QUIT			- Po tej komendzie sesja przechodzi w stan aktualizacji (chyba, że nie doszła do fazy transakcji)
+STAT			- pokazuje zawartość skrzynki. Zwraca '+OK liczbę_wiadomości rozmiar_wiadomości_w_oktetach. Na gmail wydaje się, że jest limit 260/360 wiadomości licząc od najstarszej
+LIST [_numer]	- listuje skrzynke podając numer wiadomości od 1 w kolejności od najstarszej i jej rozmiar. Jeśli podamy argument to zwraca wielkość podanej wiadomości (w oktetach)
+DELE _numer		- oznacza wiadomość o danym numerze do usunięcia. Trwale oznaczone wiadomości będą usunięte po poprawnym zakońćzeniu sesji.
+RSET			- odznacza wszystkie wiadomości oznaczone do usunięcia
+NOOP			- nic nie robi, zwraca okejke
+TOP _numer _n	- wypisuje nagłówki i pierwszych _n linii z wiadomości o danym _numerze
+UIDL [_numer]	- działa podobnie jak LIST, z tym, że nie wypisuje rozmiaru, a unikalny identyfikator wiadomości (unique id listing)
+
+IMAP
+	port 143
+
+SMTP

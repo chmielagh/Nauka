@@ -1,0 +1,59 @@
+Dyrektywy
+
+I Dyrektywy dzielą się na dwa rodzaje
+ - Attribute directives		- działają tak jak atrybuty html'owe, używa się ich w ten sam sposób, mogą zmieniać, np ostylować element, w którym są umieszczone
+ - Structural directives	- używa się ich podobnie jak AD, charakteryzują się gwiazdką z przodu, w przeciwieństwie do AT potrafią manipulować DOMem, na przykład sprawiać, że dany element pojawia się zero bądź więcej razy (nie ukrywa elementu, ale całkiem wycina)
+ 
+1. Structural directives:
+	a) *ngFor	- działa podobnie jak pętla for w javie, iteruje po elementach tablicy (lub innej kolekcji, która posiada możliwość iteracji) i tworzy dla każdego obiektu element html w DOM, na którym jest zapięta. W podstawowym wariancie jedynym argumentem jaki potrzebuje jest wskazanie zmiennej lokalnej, która będzie handlerem aktualnego obiektu z tablicy, ale można dodać kolejne argumenty pomagające złapać elementy:
+	>>	*ngFor="
+		let _x of _array;	- _x jest aktualnym elementem z tablicu _array, jest zmienną lokalną, można ją używać wewnątrz 
+		let _i = index;		- _i jest indexem w kolekcji aktualnego elementu
+		let _first = first;	- _first jest lokalnym booleanem, który jest prawodziwy jeżeli aktualny _x jest pierwszym w kolekcji
+		let _last = last;	- _last jest lokalnym booleanem, który jest prawodziwy jeżeli aktualny _x jest ostatnim w kolekcji
+		let _even = even;	- _even jest lokalnym booleanem prawdziwym tylko wtedy jeżeli aktualny _i jest parzysty
+		let _odd = odd;		- _odd jest lokalnym booleanem prawdziwym tylko wtedy jeżeli aktualny _i jest nieparzysty
+		trackBy: _trackEl"	- _trackEl jest funkcją, która będzie sprawdzała czy element się zmienił w kontekście DOMa
+	Przy zmianie modelu (_array), z którego budowany jest widok, angular przeprowadza optymalizacje i nie niszczy całego stworzonego do tej pory widoku, ale pozostawia te, które się nie zmieniły. Aby sprawdzić czy obiekt się nie zmienił służy funkcja ustawiona jako trackBy. Funkcja zwraca booleana jeśli mówiący czy element się zmienił. Domyślnie funkcja sprawdza identity objektu, czyli sprawdza po prostu czy stary_obiekt===nowy_obiekt. Możemy stworzyć optymalizację polegającą na sprawdzeniu wyłącznie id obiektu jeśli jest unikalny. (Nie do końca rozumiem składnie i działanie)
+	
+	b) *ngIf	- działa podobnie jak If, spradza czy wyrażenie jest prawdą, jeżeli tak to element, na którym jest osadzona dyrektywa jest w DOMie, a jeśli nie to go nie ma. Można też po sredniku dodać then _x i else _y wtedy jeśli zdanie jest prawdziwe to zostanie dodany element oznaczony tagiem #_x, a jeśli fałszywe to analogicznie #_y. Jeśli jest słowo kluczowe then, wtedy element, na którym jest osadzona dyrektywa, bez znaczenia czy wyrażenie było prawdziwe czy nie, nie będzie pokazana. Przykład:
+	>>	<div *ngIf="isValid;then _x; else _y">To się nigdy nie pojawi</div>
+	>>	<ng-template #_x>Valid</ng-template>
+	>>	<ng-template #_y>not Valid</ng-template>
+	
+2. Attribute directives
+	a) [ngStyle]	- służy do ostylowania danego elementu w DOMie. Przyjmuje obiekt klucz:wartość, gdzie kluczem jest nazwa property cssowej, a wartością wartość dla tej property. Oba elementy powinny być stringami. Wartość można rozbudować - można zrobić inline ifa, a nawet odwołać się do funkcji komponentu. Jeżeli to pole wymaga podania jednostki w wartości to należy rozszerzyć klucz propoerty o pole z nazwą jednostki podane po kropce.
+		Inną możliwością ostylowania elementu jest użycie property binding pola style i odwołać się do podpól. Przykłady
+	>>	<p [ngStyle]="{'color':'red'}">Text</p>
+	>>	<p [ngStyle]="{'font-size.px':getDefSize()}">Text</p>
+	>>	<p [ngStyle]="{'color':_x>4?'red':'green'}">Text</p>
+	>>	<p [style.color]="getColorForPara()">Text</p>
+	
+	b) [ngClass]	- służy do warunkowego dodawania klasy do elementu w DOMie. Przyjmuje obiekt "{'klucz':'wartosc'[,'klucz2':'wartosc2'...]}", gdzie kluczem jest nazwa klasy, a wartością wyrażenie. Jeśli wyrażenie jest prawdziwe to klasa podana w kluczu jest dodawana do elementu. Mozliwe jest podanie wielu par klucz:wartość oddzielone przecinkami. 
+		Alternatywnie można skorzystać z pola class i za pomoca property binding odwołać się do jej podpola oznaczającego klasę i przypisać mu wyrażenie, które jeśli będzie prawdziwe sprawi, ze klasa zostanie dodana. Przykłady
+	>>	<p [ngClass]="{'valid':'isValid()','notValid:'!isValid()'}">Text</p>
+	>>	<p [class.valid]='isValid()'>Text</p>
+		
+II Tworzenie dyrektyw
+	1. Attribute
+	Aby stworzyć dyrektywe należy albo wygenerować przy pomocy Angular CLI komendą "ng g d nazwa", albo stworzyć plik "nazwa.directive.ts". Struktura dyrektywy wygląda podobnie jak komponentu, różnicą jest dekorator @Directive zamiast @Component. @Directive potrzebuje jednego wymaganego parametru selector, którego bierzemy w nawiast kwardratowy, aby zaznaczyć, że dyrektywa będzie używana tak jak atrybut html. Konstruktor dyrektywy przyjmuje argument ElementRef, który jest referencją do elementu, na którym jest osadzona dyrektywa. Aby zmienić element, na którym jest dyrektywa najlepiej nadpisać metodę ngOnInit i tam odwołując sie do elementu przez pole nativeElement dostać się do pól typu style, czy class. Przykład
+	>>	constructor(private elementRef: ElementRef){}			- tworzy od razu prywatne pole w dyrektywnie
+		this.elementRef.nativeElement.style.fontSize="52px"		- ustawia font-size elementu na 52px. Aby zmienić rozmiar trzeba przypisać stringa wraz z jednostką.
+	
+	Drugim argumentem jaki może przyjmować konstruktor dyrektywy jest obiekty typu Renderer2. Dobrą praktyką jest używanie właśnie tego obiektu, aby zmieniać właściwości elementu, ponieważ strona może być prezentowana na stronie, gdzie aplikacja nie ma dostępu do DOMu, a wcześniejsza metoda właśnie polegała na modyfikowaniu DOMu. Przez renderer możemy uczynić to samo bez modyfikowania DOMu. Przykład
+	>> contructor(private elRef: elementRef, private renderer: Renderer2){}
+		this.renderer.setStyle(elementRef.nativeElement, 'color', 'red')		- metoda przyjmuje za argumenty element, właściwość stylu, wartość i flagi.
+	
+	Aby nasłuchiwac na eventy przychodzące z elementy, na jakim osadzona jest dyrektywa należy utworzyć pole, a dokładniej funkcję z dekoratorem @HostListener(). Jako argument adnotacja przyjmuje nazwe eventu, jaki ma nasłuchiwać. Funkcja natomiast przyjmue w argumencie obiekt Event. W ciele funkcji definiujemy co sie ma wydarzyć po nadejściu eventu. Przykład
+	>>	@HostListener('mouseenter') mouseEnter(event: Event){ ... }
+	
+	Innym dekoratorem jest @HostBinding, który wiąże pole do danej property elementu gospodarza. Przykład
+	>>	@HostBinding('style.backgroundColor') backgroundColor :string = 'transparent'
+		@HostListener('click') onClick(event: Event){ backgroundColor = 'blue')
+	
+	Jeśli chcemy, aby dyrektywa posiadała pola, których wartość jest ustalana z zewnątrz, a dokładniej z elementu gospodarza, możemy dodać takie pola i odekorować je adnotacją @Input(). Do takiego pola można sie odnieść z elementu gospodarza przez propery binding, czyli [pole]="'wartosc'". Kolejnym bajerem jest alias dla takiego pola. Jeśli dyrektywa przyjmuje na przykład jednej główny atrybut, lub po prostu chcemy skrócić liste argumentów podawany przez gospodarza, możemy w argumencie adnotacji Input dać alias równy selektorowi dyrektywy. Przykłady
+	>>	@Directive({selector:'[app-selector]'})
+		@Input('app-selector') color: string = 'transparent'
+		@Input() otherColor: string = 'blue'
+		<p [app-selector]="'red'" [otherColor]="'yellow'">Some text</p>
+	
