@@ -104,3 +104,40 @@ Do sterowania, czy dany użytkownik powinien mieć dostęp do danej strony (dane
 				canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
 					return this.authService.isAuthenticated().then((isAuth:boolean)=>{if(isAuth) return true; this.router.navigate(['/'])})
 				}
+				
+Podobnym propertisem i odpowiadającym mu interfejsem jest canActivateChild. Jeśli umieścimy go na obiekcie Route, który posiada dzieci będzie on chronił wszystkie dzieci, ale sam nie będzie chroniony. Sygnatura metody canActivateChild w interfejsie CanActivateChild jest identyczna jak w canActivate
+
+Kolejnym polem w obiekcie Route jest canDeactivate. Przyjmuje on również tabele guardów, których sygnatury są analogiczne jak canActivate(Child). Guardy sterują, czy użytkownik będący na danym pathie może z niego wyjść, tj. przełączyć się na inny route. Jest to przydatne w przypadku kiedy użytkownik wpisuje jakieś treści, które nie chce żeby były skasowane po przypadkowym wciśnięciu linka tudzież przycisku wstecz. Implementacja takiego guarda różni się nieco od implementacji poprzednich. Interfejs CanDeactivate jest generyczny i przyjmuje interfejs, który powinien implementować komponent decydujący o tym czy użytkownik może wyjść (komponent routa, na którym osadzimy tego guarda). Dlatego pierwszym krokiem jest stworzenie takiego interfejsu z metodą canDeactivate (sygnatura analogiczna do poprzednich guardów) i zaimplementować go do komponentu decydenta. Następtnie tworzymy klasę, któa implementuje interfejs CanDeactivate<nasz_interfejs>, która implementuje metodę canDeactivate, jednak w róznicy do poprzednich guardów przyjmuje ona jeszcze dwa dodatkowe argumenty - component, który implementuje nasz interfejs oraz nextState(optional), który jest typu RouterStateSnapshot. W ciele metody wystarczy wpisać component.canDeactivate() i logikę dopisać w naszym komponencie. Przykład:
+	>>	app-routing.module.ts
+			const appRoutes:Routes = [{path:'servers/edit', component: ServerEditComponent, canDeactivate:[CanDeactivateGuard]}]
+		can-deactivate-guard.service.ts
+			export interface CanComponentDeactivate { canDeactivate() => Observable<boolean> | Promise<boolean> | boolean;}
+			export class CanDeactivateGuard implements CanDeactivate<CanComponentDeactivate> {
+				canDeactivate(component: CanComponentDeactivate, currentRoute: ActivatedRouteSnapshot, currentState: RouterStateSnapshot, nextState?: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean{
+					return component.canDeactivate; }
+			}
+		ServerEditComponent implements CanComponentDeactivate {
+			canDeactivate() { return confirm('Do you really want to leave?'): }
+		}
+Aby uprościć powyższy przykład w przypadku kiedy wiemy, że guard ma mieć zastosowanie tylko w jednym kompoenencie, można zrezygnować z tworzenia interfejsu, a jako typ w CanDeactivate podać nazwę komponentu
+
+Kolejnym polem w Route jest data. Pole to przyjmuje obiekt KVpairs, który może zostać odczytany w komponencie po przejściu na niego przez routing.
+	>>	app-routing.modele.ts
+			const appRoutes: Routes = [...,{path:'**', component: ErrorComponent, data:{message:'Not found'}}]
+		ErrorComponent {
+			private errorMessage;
+			constructor(private route: ActivatedRoute){}
+			ngOnInit(){ this.errorMessage = this.route.snapshot.data['message'] } 
+		}
+		
+Następnym polem Route jest resolve. Przyjmuje ono obiekt KV podobnie jak data i te pola tak samo są dostępne w componencie po routingu. W tym przypadku przekazywanie danych służy jako asynchroniczne tworzenie modelu dla komponentu i wstrzyknięcie go podczas renderowania strony. Zamiast odczytywania w komponencie w ngOnInit paramentru w routcie i wykonania operacji na serwisie możemy to zrobić w resolverze, który również ma dostęp do ActivatedRouteSnapshot. W tym przypadku nie ma znaczenia, że jest to tylko snapshot, ponieważ resolver jest wykonywany od początku za każdym razem. Tworzymy więc naszego resolvera (który jest podobnie jak guardy serwisem) i implementujemy interfejs generyczny Resolve z typem, jaki ma zwrócić nasz resolver. Metodę, którą mamy nadpisać jest resolve, zwracająco standardowo observable/promise od naszego zwracanego typu lub po prostu ten typ. tutaj wykonujemy tworzenie modelu, zwracamy i możemy go wykorzystać w definicji routingu
+	>>	app-routing.module.ts
+			const appRoutes: Routes = [..,{path:'server/edit', component:ServerEditComponent, resolve:{server: ServerResolver}}]
+		ServerResolver implements Resolve<Server> {
+			constructor(private service: ServerService){}
+			resolve(route: ActivatedRouteSnapshot){
+				return this.service.getServer(+route.params['id']);
+			}
+		ServerEditComponent {
+			server: Server
+			ngOnInit(){this.route.data.subscribe((data: Data) => {this.server = data['server']})}
