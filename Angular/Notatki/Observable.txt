@@ -1,0 +1,46 @@
+Wzorzec observable to podejście do wysyłania/otrzymywania pewnych paczek informacji, zwykle asychronicznych, inne od Promiseów czy callbacków. Podstawową róznicą jest to, że Promisy operują na pojedynczym zdarzeniu, natomiast observable na streamie, może to być 0, jedno czy wiele eventów gdzie za każdym razem możemy coś zrobić w sposób programistyczny. Observable w możliwościach zawiera wszystko co posiada promise i dużo więcej i powinien być używany priorytetowo. Kolejną przewagą jest możliwość anulowania streamu oraz używanie metod typu map/filter/reduce. Do przechwytywania paczek przesyłanych przez observable używane są obserwerzy. Observer może zaczepić się o 3 rodzaje eventu - handle data, handle error, handle completion. 
+
+Aby zacząć nasłuchwiać przychodzących paczek od jakiegoś observable należy go zasubskrybować. W metodzie subscribe możemy podać 3 argumenty, każdy jest metodą-handlerem różnego typu danych (data/error/completion handlery w tej kolejności). 
+
+Klasa Observable z paczki Rx (aby działały jej funckję należy ręcznie importować 'rxjs/Rx') posiada wiele funkcji pomagających w implementacji swoich streamów. Jedną z funkcji jest interval(time:number), która od momentu zasubsbrybowania jej będzie wysyłała co <time ms> kolejne liczby począwszy od 0. Możemy na tym samym polu dać subskrybcje kilka razy, wtedy kilka liczników będzie działać równolegle. 
+	>>	CounterComponent.ts
+			ngOnInit(){ secondCounter = Observable.interval(1000); secondCounter.subscribe((num)=>console.log(num))
+			
+Aby stworzyć obiekt observable z własną logiką należy użyć funkcji create(fun) z klasy Observable. Argumentem create jest funkcja, która przyjmuje obiekt implementujący interfejs generyczny Observer, którego typ wewnętrzny musi się zgadzać z typem wysyłanych paczek. W ciele tej funkcji definiujemy logikę. Obiekt observer ma 3 główne funkcję za pomocą, których wysyłamy informacje do niego: next(data) wyśle nam paczkę zdefiniowaną w argumencie do observera; error(err:any) wyśle error z wiadomością jaką zdefiniujemy w argumencie; complete() wyśle event zakończenia strumienia danych. Po wysłaniu error lub complete kolejne paczki nie będą już wysyłane.
+	>>	CustomObservable.ts
+			ngOnInit(){
+				observable = Observable.create((observer: Observable<string>) => {
+						setTimeout(observer.next('Some data'),1000)
+						// setTimeout(observer.complete(),2000)
+						setTimeout(observer.error('Oops!', 3000)
+				})
+				observable.subscribe(
+					(data:string) => console.log('some data arrived: ' + data),
+					(error:any) => console.los('something went wrong: ' + error),
+					() => console.log('All data has been sent')
+				)}
+				
+Jeśli mamy aktywną subskrypcję na nieskończonym streamie lub niezakończonym i przejdziemy do innego komponentu to aktywne subskrybcje pomimo zniszczenia komponentu gdzie były one wołane będą nadal działać. Jest to memory leak i należy czyścić takie subskrypcję po wyjściu z komponentu. Aby to zrobić należy w ngOnDestroy odsubskrybować taką subskrybcje.
+	>>	SomeComponent.ts
+			subscription: Subsciption;
+			ngOnInit(){this.subscription = Observable.interval(1000)}
+			ngOnDestroy(){this.subscription.unsubscribe()}
+			
+Interfejs Observable posiada całą masę operatorów, tj. funkcji, które mogą manipulować danymi observable. Przykładem może być map()
+	>>	SomeComponent.ts
+			ngOnInit(){showSecEveryTwoSec = Observable.interval(2000).map((num:number) => {return num*2}); showSecEveryTwoSec.subscribe((num:number) => console.log(num)}
+			
+Innym ciekawym i lekkim obiektem jest obiekt Subject. Jest onswego rodzaju połączeniem Observable i Observera, zarówno można na nim wywoływać next() jak i te wysyłane paczki subskrybować.
+	>>	SomeService
+			mySubject = new Subject();
+		AppComponent
+			someBoolean = false;
+			constrctor(private someService: SomeService)()
+			ngOnInit(){this.someService.mySubject.subscribe((value:boolean) => this.someBoolean = value)}
+		SomeOtherComponent
+			constructor(private someService: SomeService)()
+			onSomeEvent(){this.someService.next(true)}
+			
+Oficjalna dokumentacja Rx znajduje się na
+	>>	http://reactivex.io/rxjs/
+Są tam opisy do wielu innych metod, operatorów i klas
