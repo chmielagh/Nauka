@@ -1,0 +1,75 @@
+Angular zapewnia wsparcie dla formularzy, aby łatwiej było z nimi wspólpracować, mapuje na obiekt jsonowy i posiada inne właściwości. Są dwa podejścia aby korzystać ze wsparcia angulara w formularzach - Template-Driven (TD), gdzie definiujemy formularz w htmlu oraz Reactive, gdzie formularz ustawiany jest w typescripcie i wstrzykiwany do htmla. Prostrzym podejściem jest TD, natomiast Reactive daje większą władzę i więcej możliwości.
+
+	**	Podejście Template-Driven
+
+Aby zainicjalizować wspomaganie angulara w formularzach wystarczy dodać w app.module import FormsModule. Wtedy angular automatycznie będzie wyszukiwał znaczniki <form> w templetach i je parsował. Aby podazać angularowi, które dokładnie pola mają być kontrolerami naszego formularza należy dopisać w nich atrybybut angularowy ngModel oraz zdefiniować nazwę pola atrybutem name.
+	>>	app.component.html
+			<form>
+				<label>Username</label><input type="text" name="username" ngModel>
+				<label>Password</label><input type="password" name="password" ngModel>
+				<label>Select question</label><select name="select" ngModel> .... </select>
+			</form>
+			
+Aby otrzymać po wypełnianiu i wysłaniu przez użytkownika formularz w kodzie musimy go oznaczyć i przekazać do naszej metody. Elementy htmla oznaczamy hashem, więc na elemencie form należy dodać #nazwa_formularza. Do oznaczenia możemy przypisać również jakiego typu jest dany element, robimy to po znaku "=", a typ jaki chcemy uzyskać to ngForm. Ostatnią częścią jest wysłanie elementu ngForm do kodu, do tego dodajemy do atrybuta form listener na event ngSubmit i przy triggerze uruchamiamy naszą metodę z nazwą oznaczonego formularza w argumencie.
+W kodzie od razu możemy zmapować argument na obiekt NgForm. Posiada on wiele pól, w tym value, które przechowuje KVpary inputów, do których dodaliśmy atrybut ngModel.
+	>>	app.component.html
+			<form (ngSubmit)="onSubmit(form)" #form="ngForm">
+				<input type="text" name="username" ngModel>
+			</form>
+		AppComponent.ts
+			onSubmit(form: NgForm){console.log(form.value.username);}
+			
+Innym sposobem korzystania z formularza w kodzie jest używanie go jako pola klasy. Możemy to zrobić za pomocą adnotacji ViewChild gdzie w argumencie podajemy nazwę formularza, tak jak oznaczyliśmy go w templacie.
+	>>	app.component.html
+			<form (ngSubmit)="onSumbit()" #form="ngForm">
+				<input type="email" name="email" ngModel>
+			</form>
+		AppComponent
+			@ViewChild('form') form: NgForm
+			onSubmit(){console.log(form.dirty)}
+			
+Pola możemy walidować za pomocą dyrektyw, które dodajemy na elemencie, który jest kontrolerem formularza. Na przykład eśli jakieś pole jest wymagane należy dodać dyrektywę required, jeśli chcemy sprawdzić, czy wpisany jest poprawny adres email należy dodać dyrektywę email. Formularz w swoich polach trzyma takie informacje jak valid/invalid, dodatkowo dla każdego kontrolera posiada podobne pola. Angular przy każdej zmianie dynamicznie dodaje klasy do elementu w zależności od tego w jakim jest stanie, na przykład dodaje ng-valid jeśli element poprawnie przeszedł walidacje. 
+	>>	app.component.html
+			<form (ngSubmit)="onSubmit" #f="ngForm">
+				<input type="email" name="email" ngModel required email>
+			</form>
+Dostępne wbudowane walidatory angularowe dostępne są na
+	>>	https://angular.io/api/forms/Validators
+	>>	https://angular.io/api?type=directive
+	
+Oznaczony element form możemy wykorzystać wraz z jego polami również w htmlu, na przykład możemy uzależnić czy przycisk submit jest disabled w przypadku jeśli form jest invalid (form jest invalid jeśli którekolwiek z jego kontrolerów są invalid). Klasy dodawane przez angulara możemy również łatwo wykrozystać, aby zasygnalizować użytkownikowi, które pole jest niepoprawnie wypełnione
+	>>	app.component.html
+			<form (ngSubmit)="onSubmit()" #f="ngForm">
+				<input type="email" name="email" ngModel required email>
+				<button type="submit" [disabled]="f.invalid">Submit</button>
+			</form>
+		app.component.css
+			input.ng-invalid.ng-touched{border: 1px solid red}
+	
+Aby robić logikę w zależności od stanu pojedynczego pola kontrolera zamiast w zależności od całego formularza możemy zrobić podobą rzecz jak w tamtym przypadku. Oznaczamy kontrolera jakąś zmienną, ale tym razem nie przypisujemy do niego ngForm, ale ngModel
+	>> 	app.component.html
+			<form (ngSubmit)="onSubmit()" #form="ngForm">
+				<input type="email" name="email" ngModel required email #email="ngModel">
+				<span class="help-block" *ngIf="email.invalid && email.touched">Invalid email</span>
+			</form>
+			
+Aby ustawić domyślną wartość dla jakiegoś kontrolera możemy to zrobić przez property binding na dyrektywie ngModel - jest to wiązanie jednostronne
+	>>	app.component.html
+			<form (ngSubmit)="onSubmit()" #f="ngForm">
+				<input type="text" name="username" [ngModel]="defaultUsername" required>
+			</form>
+		AppComponent
+			defaultUsername: string = "Default"
+			
+Możliwe jest też wiązanie obustronne, wtedy oprócz domyślej wartości, jaką przypisaliśmy w kodzie nastąpi też zmiana zmiennej w kodzie po zmienie wartości w formularzu
+	>>	app.component.html
+			<form (ngSubmit)="onSubmit()" #f="ngForm">
+				<input class="form-control" type="text" name="username" [(ngModel)]="username" required>
+				<p>Your username is {{ username }}</p>
+			</form>
+		AppComponent
+			username: string = "Default"
+Są zatem 3 sposoby użycia ngModel:
+	* ngModel				- takie użycie mówi angularowi, że znajduje się na tym elemencie kontroler formularza
+	* [ngModel]="field"		- wiązanie jednostronne - kontroler inicjalizowany jest zmienną field, natomiast po zmianie w formie zmienna pozostaje ta sama
+	* [(ngModel)]="field"	- wiązanie dwustronne - kontroler inicjalizowany jest zmienna field, a ta zmienia się równo z polem w formie
