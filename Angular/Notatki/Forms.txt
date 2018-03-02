@@ -73,3 +73,112 @@ Są zatem 3 sposoby użycia ngModel:
 	* ngModel				- takie użycie mówi angularowi, że znajduje się na tym elemencie kontroler formularza
 	* [ngModel]="field"		- wiązanie jednostronne - kontroler inicjalizowany jest zmienną field, natomiast po zmianie w formie zmienna pozostaje ta sama
 	* [(ngModel)]="field"	- wiązanie dwustronne - kontroler inicjalizowany jest zmienna field, a ta zmienia się równo z polem w formie
+	
+Kontrolery w formularzu można grupować, aby to zrobić należy objąć je elementem htmlowym i użyć na nim dyrektywy ngModelGroup i przypisać do niego nazwę takiej grupy. Będzie ona się znajdowała w polu value tak jak inne kontrolery. Grupa ma takie same zalety jak kontroler pojedynczy, ma te same pola oraz dodaje względem nich klasy do elementu.
+	>>	app.component.html
+			<form #form="ngForm">
+				<div ngModelGroup="userData" #userData="ngModelGroup">
+					<input type="text" name="username" ngModel>
+					<input type="text" name="email" ngModel>
+				</div>
+				<input type="text" name="smth" ngModel>
+			</form>
+			
+Aby stworzyć grupe radio button należy przygotować po stronie kodu model, tabele, rekordów w takie grupie, potem w templacie dla każdego z rekordu stworzyć diva, wewnątrz niego stworzyć label, w którym będzie input. Na inpucie należy dodać dyrektywę ngModel, atrybut name, który będzie identyfikował grupe radio oraz przypisać value.
+	>>	AppComponent
+			genders: string[] = ["male", female"]
+		app.component.html
+			<form (ngSubmit)="onSubmit()" #f="ngForm">
+				<input class="form-control" type="text" name="username" ngModel>
+				<div class="radio" *ngFor="let gender of genders>
+					<label><input type="text" name="gender" ngModel [value]="gender">{{ gender }}</label>
+				</div>
+			</form>
+			
+Możemy też ustawiać w czasie działania aplikacji pola programistycznie. Aby to zrobić potrzebujemy mieć formularz w polu naszego komponentu. Następnie na przykład w metodzie, która jest wywoływana na jakiś event tworzymy logikę. Bierzemy obiekt naszego formularza i wywołujemy na nim form, aby dostać się do danych. Tam mamy metody setValue, do którego musimy przekazać cały obiekt value formularza i wszystkie te poza zostaną nadpisane i patchValue, do której przekazujemy tylko pola obiektu value, które chcemy aktualizować i tylko te pola w formularzu zostaną zaktualizowane (polecane)
+	>>	app.component.html
+			<form (ngSubmit)="onSubmit(f)" #f="ngForm">
+				<input type="text" name="username" #username="ngModel" ngModel required>
+				<input type="email" name="email" ngModel required>
+				<button type="button" (click)="suggestEmail(username)">Suggest email</button>
+			</form>
+		AppComponent
+			@ViewChild('f') form: NgForm;
+			suggestEmail(username: NgModel){
+				this.form.form.patchValue({userData: {email: username.value + "@whirly.pl"}})
+			}
+			
+NgForm posiada metodę odpowiedzialną za resetowanie wartości. Możemy ją użyć bez argumentu, wtedy wszystkie kontrolery formluarza zostaną puste, ale możemy też przekazać w argumencie okiekt odpowiadający modelowi naszego formularza, gdzie możemy ustawić wartości jakie chcemy aby były domyślne po resecie (nie muszą być zdefiniowane wszystkie pola, wystarczą te które chcemy wypełnić tak jak w patchValue)
+	>>	AppComponent
+			@ViewChild('form') form: NgForm;
+			resetForm(){
+				this.form.reset({userData: {userName: 'new'}})
+			}
+			
+			
+			
+	**	Podejście Reactive
+	
+W podejściu Reactive formularz powstaje programistycznie. Aby zacząć pracować w tym podejściu należy zamiast FormsModule zaimpoertować ReactiveFormsModule. Obiekt naszego formularza będzie typem FormGroup z pakietu @angular/forms.
+W templacie musimy mieć oczywiście szablon, w który chcemy mieć wstrzyknięty zaprogramowany model. W komponencie tworzymy pole FormGroup i inicjalizujemy go w ngOnInit jako, że musi być on zainicjalizowany przez renderowaniem. Konstruktor klasy FormGroup bierze w argumencie obiekt, który będzie modelem. Obiekt ten składa się z KVpar, zalecane jest branie kluczy w apostrofy, aby nie zostały one zminifikowane, a jako wartości tworzymy obiekty FormControl. 
+Aby zsynchronizować model z szablonem należy na elemencie form wstawić dyrektywę formGroup i przypisać do niej obiekt modelu z komponentu, a następnie przy każdym kontrolerze dodać dyrektywę formControlName i przypisać do niej klucz wybranej KVpary z modelu.
+	>>	app.component.html
+			<form [formGroup]="signupForm">
+				<input type="text" formControlName="username">
+				<input type="email" formControlName="email>
+			</form>
+		AppComponent
+			signupForm: FormGroup;
+			ngOnInit(){
+				this.signupForm = new FormGroup({
+					'username': new FormControl('default username'),
+					'email': new FormControl(null)
+				})
+
+Drugim argumentem jaki może przyjąć FormControl jest walidator lub tablica walidatorów, a dokładniej referencji do metod walidujących. Podstawowe metody walidujące znajdują się w klasie Validators i są metodami statycznymi.
+	>>	AppComponent
+			signupForm: FormGroup;
+			ngOnInit(){ 
+				this.signupForm = new FormGroup({
+					'username': new FormControl(null, Validators.required), 
+					'email': new FormControl(null, [Validators.required, Validators.email])
+				}) 
+			}
+			
+Model ma przez cały czas dostęp do aktualnych wartości kontrolerów, dlatego jeśli chcemy w templacie dostać wartość innego pola nie musimy juz oznaczać owego pola i sie do niego odwoływać, a możemy skorzystać z funkcji get() obiektu FormGroup, która zwróci wartość dla klucza, który podamy w argumencie
+	>>	AppComponent
+			signupForm: FormGroup;
+			ngOnInit(){
+				this.signupForm = new FormGroup({
+					'username': new FormControl(null, Validators.required)
+				})
+			}
+		app.component.html
+			<form [formGroup]="signupForm">
+				<input type="text" formControlName="username">
+				<span *ngIf="signupForm.get("username").invalid && signupForm.get("username").touched">Enter a valid username</span>
+			</form>
+			
+W głownym FormGroup możemy też zagnieżdżać inne FormGroupy i dzięki temu możmey grupować nasze kontrolery w grupy. W kodzie jest to proste, natomiast w templacie należy taką grupę otoczyc elementem z dyrektywą formGroupName i przypisać mu nazwę naszej grupy. Następnie jeśli będziemy się odwoływać do zagnieżdżonego kontrolera przez metodę get() na głownym formularzu trzeba wpisać w argumencie ścieżkę do danego pola przez grupy z kropką jako separator
+	>>	AppComponent
+			signupForm: FormGroup;
+			ngOnInit(){
+				this.signupForm = new FormGroup({
+					'userdata': new FormGroup({
+						'username': new FormControl(null, Validators.required),
+						'email': new FormControl(null, [Validators.required, Validators.email])
+					}),
+					'other': new FormControl(null)
+				})
+			}
+		app.component.html
+			<form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+				<div formGroupName="userdata>
+					<input type="text" formControlName="username">
+					<input type="email" formControlName="email">
+				</div>
+				<span *ngIf="signupForm.get('userdata.username).invalid && signupForm.get('userdata.userdata').touched">Enter a valid username</span>
+				<input type="text" formControlName="other">
+				<button type="submit">Submit</button>
+			</form>
+			
