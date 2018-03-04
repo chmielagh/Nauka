@@ -182,3 +182,82 @@ W głownym FormGroup możemy też zagnieżdżać inne FormGroupy i dzięki temu 
 				<button type="submit">Submit</button>
 			</form>
 			
+Innym elementem grupującym, który możemy dodać do FormGroupa jest FormArray. Ma on taką przewagę nad FormGroupem, że jego elementy moga być dodawane dynamicznie, oraz może być pusty. 
+	>>	AppComponent
+			signupForm: FormGroup
+			ngOnInit(){
+				this.signupForm = new FormGroup({
+					'username': new FormControl(null),
+					'hobbies': new FormArray([])
+				})
+			}
+			onAddHobby(){
+				(<FormArray>this.signupForm.get('hobbies')).push(new FormControl(null))
+			}
+		app.component.html
+			<form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+				<input type="text" formControlName="username">
+				<hr>
+				<h4>Hobbies</h4>
+				<div *ngFor="let hobbyControl of signupForm.get('hobbies').controls; let i = index">
+					<input type="text" [formControlName]="i">
+				</div>
+				<button type="button" (click)="onAddHobby()">Add Hobby</button>
+			</form>
+
+Podejście reactive pozwala nam tworzyć swoje własne walidatory. Walidator to funkcja, która w argumencie przyjmuje obiekt FormControl, a zwraca obiekt {[s:string]: boolean}. String jaki użyjemy jest dowolny, a boolean true mówi nam, że walidator stwierdził niepoprawność formularza. Jeśli natomiast formularz jest poprawny to nie zwracamy booleana false tylko funkcja ma zwrócić nulla. Jeśli chcemy w tej funkcji użyć czegoś z naszej klasy musimy zbindować ją do funkcji. Aby to zrobić, w miejscu gdzie dodajemu nasz walidator, dopisujemy mu .bind(this), wtedy będzie on widział pola z naszej klasy. Obiekt zwracany przez walidator trafia do tablicy errors kontrolera, zatem jeśli stwierdzi on nieprawidłowość formularza, to w errors będziemy mieć informacje jakiego typu jest to nieprawidłowość
+	>>	AppComponent
+			signupForm: FormGroup
+			forbiddenHobbies = ['Poker', 'Hazard']
+			ngOnInit(){
+				this.signupForm = new FormControl({
+					'username': new FormControl(null),
+					'hobbies': new FormArray([])
+				})
+			}
+			onAddHobby(){
+				(<FormArray>this.signupForm.get('hobbies')).push(new FormControl(null, this.forbiddenName.bind(this)))
+			}
+			forbiddenName(control: FormControl): {[s:string]: boolean} {
+				if(this.forbiddenHobbies.indexOf(control.value) !== -1)
+					return {'nameIsForbidden': true};
+				return null;
+			}
+		app.component.html
+			<form [formGroup]="singupForm">
+				<input type="text" formControlName="username">
+				<h4>Hobbies</h4>
+				<div *ngFor="let hobbyControl of signupForm.get('hobbies').controls; let i = index">
+					<input type="text" [formControlName]="i">
+					<span *ngIf="hobbyControl.errors['nameIsForbidden']">This hobby is forbidden</span>
+				</div>
+				<button type="button" (click)="onAddHobby()">Add Hobby</button>
+			</form>
+			
+Powyższe walidatory były synchroniczne, ale są też walidatory asynchroniczne, które podajemy w trzecim argumencie FormControl. Takie walidatory sa przydatne jeśli nie mamy od razu widomości, czy dane pole jest poprawne, an przykład w przypadku jeśli sprawdzane jest to przez serwer itd. Taki walidataor przyjmuje również FormControl, ale zwraca Promise lub Observable od <any>. Po stronie angulara, w momencie kiedy dane nie zostały jeszcze otrzymane, widać, że dodany jest status pending, natomiast po otrzyaniu walidacji statsy są ustawiane standardowo
+	>>	AppComponent
+			signupForm: FormGroup
+			ngOnInit(){
+				this.signupForm = new FormGroup({
+					'email': new FormControl(null, Validators.email, this.emailForbidden)
+				})
+			}
+			emailForbidden(control: FormControl): Promise<any> | Observable<any> {
+				return new Promise<any>((resolve, reject) => {
+					setTimeout(()=>{
+						if(emailIsInvalid())
+							resolve({'emailIsForbidden': true})
+						resolve(null)
+					},1000)
+				})
+			}
+			
+FormGroup wystawia dwa observables, które możemy wykorzystać w kodzie: valueChanges oraz statusChanges
+	>>	AppComponent
+			signupForm: FormGroup
+			ngOnInit(){
+				this.signupForm = .....
+				this.signupForm.valueChanges.subscribe((value)=>console.log(value))
+			}
+			
+Ustawianie i resetowanie danych działa tak samo jak w podejściu TD, więc mamy do dyspozycje setValue, patchValue oraz reset
