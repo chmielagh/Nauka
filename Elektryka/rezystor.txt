@@ -1,1 +1,15 @@
 Rezystor
+
+Jest to element bierny obwodu elektrycznego używany do ograniczenia prądu w nim płynącego i wydzielanie go w postaci ciepła.
+Podstawwą właściwością rezystów jest rezystancja mierzona w omach.
+Drugą właściwością rezystora jest moc znamionowa, która mówi mają maksymalnie moc może wydalić rezystor w postaci energii cieplnej bez zachwiania jego rezystancji znamionowej. 
+Moc jest iloczynem prądu oraz spadku napięcia na elemencie i jest wyrażana w Watach, a symbolem jest P (power)
+1W = 1V*1A = 1kg*m2/s3
+
+Przy szeregowym połączeniu rezystorów rezystancja zastępcza jest sumą rezystancji każdego rezystora
+R_z = R_1 + R_2 + ... + R_n
+
+Przy połączeniu równoległym wartość odwrotności rezystancji zastępczej jest sumą odwrotności poszczególnych rezystancji
+1/R_z = 1/R_1 + ... + 1/R_n
+Przy dwóch rezystorach wzór upraszcza się do
+R_z = R_1*R_2/(R_1+R_2)
