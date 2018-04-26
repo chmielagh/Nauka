@@ -1,0 +1,29 @@
+Prąd elektryczny
+
+	*	Jest to uporządkowany ruch ładunków elektrycznych w przewodniku.
+
+Przewodnik charakteryzuje się tym, że posiada wolne cząsteczki naładowene dodatnio, bądź ujemnie. Przykładem przewodników są metale, których cząsteczki posiadają wolne elektrony posiadające ładunek ujemny. 
+Aby prąd popłynął potrzebne jest napięcie. Napięcie jest to różnica potencjałów w obwodzie elektrycznym. Cząsteczki dążą do równowagi, dlatego jeśli zamkniemy obwód, który będzie posiadał nierównomiernie rozłożone łądunki będzie on napinał z taką siłą jaka jest różnica tych potencjałów. Napięcie zawsze mierzymy równolegle, ponieważ jest to różnica.
+Jeżeli obwód jest otwarty lub jest zachowana równowaga ładunków elektrony będą się poruszać, ale w sposób chaotyczny, więc nie bedzie to prąd, który wymaga ruchu uporządkowanego.
+To jak "szybko" płynie prąd mówi nam natężenie (kolokwialnie prąd). Natężenie jest to ilość cząsteczek przepływająca przez obwód w pewnym punkcie w jednostce czasu. Należy pamiętać, że natężenie to nie jest szybkość jednego ładunku. Jeśli następuje pewne napięcie to cząsteczki będą wypychały ładunki stojące na ich drodze. Można to przedstawić jak rząd kulek, jeśli kulka na jednym końcu napina na cały rząd, to wypychane są wszystkie kulki, a ostatnia przepływa do celu. 
+Kierunek prądu jest zależny od cząstek, które będą się ruszały. Jeżeli nosicielami ładunku będą elektrony naładowane ujemnie, wtedy prąd będzie płynąć od - do +, natomiast jeśli będą to np jony dodatnie do od + do -.
+Umownie w obliczeniach przyjmuje się zawsze, że prąd płynie od + do -, nawet jeśli niekoniecznie zgadza się to z rzeczywistością.
+
+Jednostką napięcia jest wolt (V), który można rozłożyć na:
+1V = 1W/1A = 1J/1C = (1kg*m2)/(1A*s2)
+
+Jednostką natężenia prądu jest Amper, który można rozłożyć na:
+1A = 1C/s = 1V/1om = 1W/1V = 1F*1V/1s = 1J/1C*1om
+
+Prawo Ohma
+
+	*	Prąd jest wprost proporcjonalny do napięcia i odwrotnie proporcojalny do rezystancji.
+	
+Rezystancja, jest to opór, który napotyka prąd na swojej drodze w obwodzie. 
+Jednostką rezystancji jest Ohm, który można rozłożyć na:
+
+1om = 1V/1A = (1kg*1m2)/(1s3*1A2)
+
+Każdy element posiada jakiś opór, nawet bateria czy inne źródło zasilania posiadają jakiś opór wewnętrzny.
+Do obwodu ZAWSZE !!! należy dołożyć obciążenie w postaci rezystora, powieważ jeśli obwód posiada bardzo mały opór popłynie przez niego bardzo duży prąd mogący uszkodzić elementy obwodu.
+Jeśli przez element płynie prąd to na elemencie występuje tzn spadek napięcia, który jest wprost proporcjonalny do prądu oraz do rezystancji wewnętrznej elementu.

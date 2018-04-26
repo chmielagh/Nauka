@@ -2,3 +2,5 @@ List do nauki:
 
 Protokoły mailowe
 Angular
+bootstrap4: https://scrimba.com/g/gbootstrap4
+samolociki z papieru xD: https://www.wired.com/video/how-this-guy-folds-and-flies-world-record-paper-airplanes/

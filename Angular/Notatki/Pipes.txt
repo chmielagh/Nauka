@@ -1,0 +1,66 @@
+Pipy w anglularze to mechnizm przekształcania pewnych danych na froncie. Używane są na przykład string interpolation gdzie wypisujemy zawartość jakiegoś pola. Jeśli chcemy, aby formatowanie na wyjściu było inne, a nie chcemy zmieniać samego pola to możemy ich uzyć
+	>>	AppComponent
+			username='Adam'
+		app.component.html
+			<p>{{ username | upercase }}</p>
+			
+Pipy mogą być parametryzowane. Aby dodać parametr do pipa należy go dodać po dwukropku, jeśli chcemy dodać więcej parametrów, to ich separatorem jest również dwukropek
+	>>	app.component.html
+			<p>{{ startDate | date:'fullDate' }}</p>
+			
+Więcej informacji o pipach i ich parametrach znajduje się na oficjalnej dokumentacji
+	>>	https://angular.io/api?query=pipe
+	
+Pipy mogą być łączone ze sobą, wystarczy po prostu do wyniku pipa dodac kolejnego pipa. Kolejność ma znaczenie - pipy będą parsowane zgodnie z kolejnością, od lewej do prawej
+	>>	app.component.html
+			<p> {{ startDate | data:'fullData' | uppercase }}</p>
+			
+Aby stworzyć własnego pipa należy stworzyć klasę, która implementuje interfejs PipeTransform. Klasa musi być odekorowaną adnotacją @Pipe, która przyjmuje w argumencie obiekt z polem o nazwie name, którego wartość będzie selektorem dla nowego pipa. Klasa musi definiować metodę tranform, która będzie wykonywana kiedy nasz pipe będzie wykorzystany. Jako pierwszy argument metoda przyjmuje obiekty typu any i musi zwrócić przetworzony obiekt. Aby pipe działał poprawnie należy jeszcze dopisać go w polu declarations w adnotacji modułu.
+	>>	custom.pipe.ts
+			@Pipe({name:'selector'})
+			export class CustomPipe implements PipeTransform{
+				transform(value:any):any{
+					return value.slice(0,2);
+				}
+			}
+			
+Drugim argumentem metody transform jest varargs z parametrami pipu, dlatego możemy tu pobierać tyle parametrów ile chcemy w kolejności w jakiej będzie podana w templacie.
+	>>	custom.pipe.ts
+			@Pipe({name:'selector'})
+			export class CustomPipe implements PipeTransform{
+				transform(value: any, limit:number):any {
+					returm value.slice(0,limit);
+				}
+			}
+		app.compoenent.html
+			<p>{{ someData | selector:5 }}</p>
+	
+Pipów możemy używać nie tylko na zmienianiu wyglądu jakiechś stringów, ale też na każdym zbiorze danych, możemy na przykład je filtrować. Jeśli chcemy, aby wyświetlały się tylko wybrane z jakiejś listy danych dane, możemy użyć na pętli ngFor pipy, który będzie nam je filtrował
+	>>	custom.pipe.ts
+			transform(values:any, filterString: string, propertyName:string): any {
+				if(values.length===0)
+					return null;
+				const resultArray = [];
+				for(let value of values){
+					if(value[propertyName]===filterString)
+						resultArray.push(value)
+				}
+				return resultArray;
+			}
+		AppCompoenent
+			filteredStatus: string = ''
+		app.compoenent.html
+			<input [(ngModel)]="filteredStatus" type="text">
+			<div *ngFor="let item of items | custom:filteredStatus:status"> ... </div>
+			
+Domyślnie pipy są ponownie kalkulowane tylko w przypadku zmiany któregoś z parametrów, natomiast raz przeliczony pipe nie zmieni się jeśli w między czasie zmieni się model wwejściowy (array lub obiekt). Aby to wymusić w adnotacji @Pipe ustawiamy pole pure na false (może powodować duży spadek wydajeności!!!)
+	>>	custom.pipe.ts
+			@Pipe({name:'custom',pure:false})
+			
+Istanieje wbudowany pipe async, służący do operowania na wartościach, które przyjdą asynchronicznie w stosunku do załadowania strony. Async możemy użyć na obiekcie promise lub observable, dopóki wartość nie przyjdzie to na ekranie nie pojawi się wartość, natomiast w chwili przyjścia danych pole uzupełni się nimi.
+	>>	AppComponent
+			status = new Promise((resolve, reject) => {
+				setTimeout(()=>{resolve('someStatus')},1000)
+			})
+		app.compoenent.html
+			<p>Status: {{ status | async }}</p>

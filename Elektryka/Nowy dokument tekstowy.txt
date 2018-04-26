@@ -1,0 +1,10 @@
+Prąd elektryczny
+
+	*	Jest to uporządkowany ruch ładunków elektrycznych w przewodniku.
+
+Przewodnik charakteryzuje się tym, że posiada wolne cząsteczki naładowene dodatnio, bądź ujemnie. Przykładem przewodników są metale, których cząsteczki posiadają wolne elektrony posiadające ładunek ujemny. 
+Aby prąd popłynął potrzebne jest napięcie. Napięcie jest to różnica potencjałów w obwodzie elektrycznym. Cząsteczki dążą do równowagi, dlatego jeśli zamkniemy obwód, który będzie posiadał nierównomiernie rozłożone łądunki będzie on napinał z taką siłą jaka jest różnica tych potencjałów. Napięcie zawsze mierzymy równolegle, ponieważ jest to różnica.
+Jeżeli obwód jest otwarty lub jest zachowana równowaga ładunków elektrony będą się poruszać, ale w sposób chaotyczny, więc nie bedzie to prąd, który wymaga ruchu uporządkowanego.
+To jak "szybko" płynie prąd mówi nam natężenie (kolokwialnie prąd). Natężenie jest to ilość cząsteczek przepływająca przez przekrój w pewnym punkcie w jednostce czasu. Należy pamiętać, że natężenie to nie jest szybkość jednego ładunku. Jeśli następuje pewne napięcie to cząsteczki będą wypychały ładunki stojące na ich drodze. Można to przedstawić jak rząd kulek, jeśli kulka na jednym końcu napina na cały rząd, to wypychane są wszystkie kulki, a ostatnia przepływa do celu. 
+Kierunek prądu jest zależny od cząstek, które będą się ruszały. Jeżeli nosicielami ładunku będą elektrony naładowane ujemnie, wtedy prąd będzie płynąć od - do +, natomiast jeśli będą to np jony dodatnie do od + do -.
+Umownie w obliczeniach przyjmuje się zawsze, że prąd płynie od + do -, nawet jeśli niekoniecznie zgadza się to z rzeczywistością.
